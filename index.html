@@ -3,202 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVI Analysis Tool v3.0 (Dynamic Editor)</title>
+    <title>CVI Analysis Tool v2.1 (Dynamic Rows)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; }
         .step-active { color: #1d4ed8; border-bottom: 3px solid #1d4ed8; font-weight: bold; }
-        .cell-input::-webkit-inner-spin-button, .cell-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         @media print { .no-print { display: none; } }
     </style>
 </head>
 <body class="p-4 md:p-10">
 
-    <div class="max-w-6xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden border border-gray-100">
-        <div class="bg-gradient-to-r from-slate-800 to-blue-900 p-6 text-white flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight">CVI Analysis Tool <span class="text-blue-400 text-sm font-normal">v3.0 Dynamic</span></h1>
-                <p class="text-slate-300 text-xs mt-1">จัดการข้อคำถามและผู้เชี่ยวชาญได้อย่างอิสระตามหลัก Polit & Beck (2006)</p>
-            </div>
-            <div class="text-right no-print">
-                <button onclick="location.reload()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1 rounded border border-white/20 transition">เริ่มใหม่ทั้งหมด</button>
-            </div>
+    <div class="max-w-5xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden border border-gray-100">
+        <div class="bg-gradient-to-r from-blue-800 to-indigo-900 p-8 text-white">
+            <h1 class="text-3xl font-bold tracking-tight">CVI Analysis Tool</h1>
+            <p class="text-blue-200 text-sm mt-2 opacity-90">เวอร์ชันปรับปรุง: เพิ่ม/ลบแถวได้อิสระ</p>
         </div>
 
-        <div class="p-6">
-            
-            <div id="setup-area" class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200 no-print">
-                <div class="flex items-center gap-4">
-                    <label class="font-bold text-gray-700 whitespace-nowrap">จำนวนผู้เชี่ยวชาญ:</label>
-                    <div class="flex items-center border-2 border-blue-200 rounded-lg bg-white overflow-hidden">
-                        <button onclick="updateExperts(-1)" class="px-3 py-1 bg-gray-100 hover:bg-red-100 text-red-600 font-bold">-</button>
-                        <input type="number" id="expert-count" value="3" min="3" max="20" class="w-12 text-center font-bold outline-none" readonly>
-                        <button onclick="updateExperts(1)" class="px-3 py-1 bg-gray-100 hover:bg-green-100 text-green-600 font-bold">+</button>
-                    </div>
-                </div>
-                <div class="flex items-center justify-end gap-2">
-                    <button onclick="pasteExcel()" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-100 transition flex items-center gap-1">
-                        📋 วางจาก Excel
-                    </button>
+        <div class="flex justify-around bg-gray-50 border-b overflow-x-auto no-print">
+            <div id="s1-lbl" class="py-4 px-6 text-sm step-active">1. ตั้งค่า</div>
+            <div id="s2-lbl" class="py-4 px-6 text-sm text-gray-400">2. ป้อนข้อมูล</div>
+            <div id="s3-lbl" class="py-4 px-6 text-sm text-gray-400">3. สรุปผล & Export</div>
+        </div>
+
+        <div class="p-8">
+            <div id="step1" class="space-y-6">
+                <div class="max-w-md mx-auto space-y-4">
+                    <label class="block font-semibold text-gray-700">ระบุจำนวนผู้เชี่ยวชาญ (Experts)</label>
+                    <input type="number" id="experts" min="3" max="20" value="5" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none transition">
+                    <p class="text-xs text-amber-600 font-medium italic">ตามเกณฑ์ Lynn (1986) ต้องใช้ผู้เชี่ยวชาญอย่างน้อย 3 คน</p>
+                    <button onclick="initTable()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition">เริ่มสร้างตาราง</button>
                 </div>
             </div>
 
-            <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm mb-6">
-                <table class="w-full text-left border-collapse" id="main-table">
-                    <thead class="bg-slate-100 text-slate-600 text-xs uppercase">
-                        <tr id="thr">
-                            <th class="p-3 border-r w-16 text-center">Item</th>
-                            <th class="p-3 text-center w-20 no-print">ลบ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbr" class="text-sm">
-                        </tbody>
-                </table>
+            <div id="step2" class="hidden">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-4 gap-4">
+                    <div>
+                        <h3 class="font-bold text-lg text-blue-800">ตารางบันทึกคะแนน</h3>
+                        <p class="text-xs text-gray-500">ระดับ 1-4 (3-4 คือใช้ได้)</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="pasteExcel()" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-100">📋 วางจาก Excel</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                    <table class="w-full text-left border-collapse" id="inputGrid">
+                        <thead class="bg-gray-100 text-gray-600 text-xs uppercase">
+                            <tr id="hRow"></tr>
+                        </thead>
+                        <tbody id="bRow" class="text-sm"></tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 flex gap-2">
+                    <button onclick="addNewRow()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-200 transition">➕ เพิ่มแถว (Add Row)</button>
+                    <button onclick="removeLastRow()" class="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition">➖ ลบแถวสุดท้าย</button>
+                </div>
+
+                <div class="mt-8 flex gap-4 no-print">
+                    <button onclick="showStep(1)" class="flex-1 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-500">ย้อนกลับ</button>
+                    <button onclick="processCVI()" class="flex-[2] py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700">คำนวณผลสถิติ</button>
+                </div>
             </div>
 
-            <button onclick="addRow()" class="no-print w-full py-3 mb-8 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 font-bold hover:bg-blue-50 transition flex items-center justify-center gap-2">
-                <span>➕ เพิ่มข้อคำถาม (Add New Item)</span>
-            </button>
+            <div id="step3" class="hidden">
+                <div id="summaryCards" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"></div>
 
-            <div class="flex flex-col gap-8">
-                <div class="text-center no-print">
-                    <button onclick="processCVI()" class="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-blue-200 transform hover:scale-105 transition">
-                        วิเคราะห์ผล CVI
-                    </button>
+                <div class="border rounded-2xl overflow-hidden mb-6 shadow-sm">
+                    <table class="w-full text-center" id="resultTable">
+                        <thead class="bg-slate-800 text-white">
+                            <tr>
+                                <th class="p-3 text-xs uppercase">Item</th>
+                                <th class="p-3 text-xs uppercase">Agreed (3-4)</th>
+                                <th class="p-3 text-xs uppercase">I-CVI</th>
+                                <th class="p-3 text-xs uppercase">95% CI</th>
+                                <th class="p-3 text-xs uppercase">ผลพิจารณา</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resBody" class="divide-y divide-gray-100"></tbody>
+                    </table>
                 </div>
 
-                <div id="results-area" class="hidden space-y-6">
-                    <hr class="border-t-2 border-dashed border-gray-200">
-                    
-                    <div id="stat-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-
-                    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-                        <table class="w-full text-center">
-                            <thead class="bg-slate-800 text-white text-sm">
-                                <tr>
-                                    <th class="p-3">ข้อที่</th>
-                                    <th class="p-3">เห็นพ้อง (3-4)</th>
-                                    <th class="p-3">I-CVI</th>
-                                    <th class="p-3">95% CI</th>
-                                    <th class="p-3">ผลการพิจารณา</th>
-                                </tr>
-                            </thead>
-                            <tbody id="res-body" class="divide-y"></tbody>
-                        </table>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 no-print">
-                        <button onclick="exportToExcel()" class="bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-700">📥 Export Excel</button>
-                        <button onclick="window.print()" class="bg-slate-700 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-black">🖨️ พิมพ์รายงาน</button>
-                    </div>
+                <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 mb-8">
+                    <h4 class="font-bold text-blue-900 mb-2">บทสรุปทางวิชาการ:</h4>
+                    <ul class="text-sm text-blue-800 space-y-1 list-disc pl-5" id="adviceList"></ul>
                 </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 no-print">
+                    <button onclick="exportToExcel()" class="bg-emerald-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-emerald-700">📥 ดาวน์โหลด Excel (.xlsx)</button>
+                    <button onclick="window.print()" class="bg-gray-800 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-black">🖨️ พิมพ์รายงาน</button>
+                </div>
+                <button onclick="location.reload()" class="w-full mt-6 text-gray-400 text-xs underline no-print">เริ่มการวิเคราะห์ใหม่</button>
             </div>
         </div>
     </div>
 
     <script>
-        let currentExperts = 3;
-        let rowCount = 0;
+        let nExp;
+        let finalData = [];
 
-        // Initialize with 5 rows
-        window.onload = () => {
-            renderHeaders();
-            for(let i=0; i<5; i++) addRow();
-        };
-
-        function renderHeaders() {
-            const thr = document.getElementById('thr');
-            let html = '<th class="p-3 border-r w-16 text-center">Item</th>';
-            for(let i=1; i<=currentExperts; i++) {
-                html += `<th class="p-3 text-center bg-blue-50/50">Exp ${i}</th>`;
-            }
-            html += '<th class="p-3 text-center w-20 no-print">ลบ</th>';
-            thr.innerHTML = html;
-        }
-
-        function updateExperts(val) {
-            const newCount = currentExperts + val;
-            if(newCount < 3 || newCount > 20) return;
-            
-            currentExperts = newCount;
-            document.getElementById('expert-count').value = currentExperts;
-            
-            // Refresh table to match expert count
-            const rowsData = [];
-            document.querySelectorAll('#tbr tr').forEach(tr => {
-                const rowVals = [];
-                tr.querySelectorAll('.cell-input').forEach(input => rowVals.push(input.value));
-                rowsData.push(rowVals);
+        function showStep(n) {
+            document.querySelectorAll('[id^="step"]').forEach(s => s.classList.add('hidden'));
+            document.getElementById('step'+n).classList.remove('hidden');
+            document.querySelectorAll('[id$="-lbl"]').forEach((l, idx) => {
+                l.classList.toggle('step-active', idx + 1 === (n == 3 ? 3 : n));
             });
-
-            renderHeaders();
-            const b = document.getElementById('tbr');
-            b.innerHTML = '';
-            rowCount = 0;
-            rowsData.forEach(data => addRow(data));
         }
 
-        function addRow(existingData = []) {
-            rowCount++;
-            const b = document.getElementById('tbr');
-            const tr = document.createElement('tr');
-            tr.className = "border-b hover:bg-blue-50/30 transition group";
-            tr.id = `row-${rowCount}`;
+        function initTable() {
+            nExp = parseInt(document.getElementById('experts').value);
+            if(nExp < 3) return alert("ต้องมีผู้เชี่ยวชาญอย่างน้อย 3 คน");
 
-            let html = `<td class="p-3 font-bold border-r bg-gray-50 text-center item-index">${rowCount}</td>`;
-            for(let i=1; i<=currentExperts; i++) {
-                const val = existingData[i-1] || '';
-                html += `<td class="p-1"><input type="number" min="1" max="4" value="${val}" class="cell-input w-full text-center py-2 bg-transparent outline-none focus:bg-white rounded border border-transparent focus:border-blue-300"></td>`;
-            }
-            html += `<td class="p-3 text-center no-print">
-                        <button onclick="removeRow('${tr.id}')" class="text-red-300 hover:text-red-600 font-bold transition">✕</button>
-                     </td>`;
+            const h = document.getElementById('hRow');
+            h.innerHTML = '<th class="p-3 border-r">ข้อที่</th>';
+            for(let i=1; i<=nExp; i++) h.innerHTML += `<th class="p-3 text-center">E${i}</th>`;
+
+            document.getElementById('bRow').innerHTML = '';
+            for(let i=0; i<5; i++) addNewRow(); // เริ่มต้นที่ 5 ข้อ
+            showStep(2);
+        }
+
+        function addNewRow() {
+            const b = document.getElementById('bRow');
+            const rowCount = b.rows.length + 1;
+            const tr = document.createElement('tr');
+            tr.className = "border-b hover:bg-blue-50/50 transition";
             
+            let html = `<td class="p-3 font-bold border-r bg-gray-50 text-center item-num">${rowCount}</td>`;
+            for(let j=1; j<=nExp; j++) {
+                html += `<td class="p-1"><input type="number" min="1" max="4" class="cell w-full text-center py-2 bg-transparent outline-none focus:bg-white border-b border-transparent focus:border-blue-400"></td>`;
+            }
             tr.innerHTML = html;
             b.appendChild(tr);
-            reIndex();
         }
 
-        function removeRow(id) {
-            const row = document.getElementById(id);
-            if(document.querySelectorAll('#tbr tr').length <= 1) return alert("ต้องมีอย่างน้อย 1 ข้อคำถาม");
-            row.remove();
-            reIndex();
-        }
-
-        function reIndex() {
-            document.querySelectorAll('.item-index').forEach((td, idx) => {
-                td.innerText = idx + 1;
-            });
+        function removeLastRow() {
+            const b = document.getElementById('bRow');
+            if(b.rows.length > 1) b.deleteRow(-1);
         }
 
         async function pasteExcel() {
             const text = await navigator.clipboard.readText();
             const lines = text.trim().split(/\r?\n/);
-            const b = document.getElementById('tbr');
-            b.innerHTML = '';
-            rowCount = 0;
+            const b = document.getElementById('bRow');
+            b.innerHTML = ''; // เคลียร์ของเก่า
             
-            lines.forEach(line => {
+            lines.forEach((line, idx) => {
+                addNewRow();
+                const inputs = b.rows[idx].querySelectorAll('input');
                 const vals = line.split('\t');
-                addRow(vals);
+                vals.forEach((v, vIdx) => {
+                    if(inputs[vIdx]) inputs[vIdx].value = v.trim();
+                });
             });
         }
 
-        let excelData = [];
         function processCVI() {
-            const rows = document.querySelectorAll('#tbr tr');
+            const rows = document.querySelectorAll('#bRow tr');
             let itemCVIs = [];
-            let uaTotal = 0;
+            let uaCount = 0;
             let resHtml = '';
-            excelData = [];
+            finalData = [];
 
-            const crit = currentExperts <= 5 ? 1.00 : 0.78;
+            const crit = nExp <= 5 ? 1.00 : 0.78;
 
             for(let i=0; i<rows.length; i++) {
-                const inputs = rows[i].querySelectorAll('.cell-input');
+                const inputs = rows[i].querySelectorAll('input');
                 let scores = [];
                 let hasEmpty = false;
                 
@@ -207,60 +179,63 @@
                     scores.push(parseInt(input.value));
                 });
 
-                if(hasEmpty) return alert(`กรุณากรอกข้อมูลข้อที่ ${i+1} ให้ครบทุกช่อง`);
+                if(hasEmpty) return alert(`กรุณากรอกคะแนนข้อที่ ${i+1} ให้ครบทุกช่องก่อนคำนวณ`);
 
-                const agreed = scores.filter(s => s >= 3).length;
-                const icvi = agreed / currentExperts;
-                const isUA = agreed === currentExperts ? 1 : 0;
-                uaTotal += isUA;
+                const agreed = scores.filter(v => v >= 3).length;
+                const icvi = agreed / nExp;
+                const ua = (agreed === nExp) ? 1 : 0;
+                uaCount += ua;
                 itemCVIs.push(icvi);
 
-                // 95% CI
+                // Wilson Score Interval 95%
                 const z = 1.96;
-                const low = (2*agreed + z*z - z*Math.sqrt(z*z + 4*agreed*(1-icvi))) / (2*(currentExperts + z*z));
-                const high = (2*agreed + z*z + z*Math.sqrt(z*z + 4*agreed*(1-icvi))) / (2*(currentExperts + z*z));
+                const low = (2*agreed + z*z - z*Math.sqrt(z*z + 4*agreed*(1-icvi))) / (2*(nExp + z*z));
+                const high = (2*agreed + z*z + z*Math.sqrt(z*z + 4*agreed*(1-icvi))) / (2*(nExp + z*z));
 
-                const isPass = icvi >= crit;
-                resHtml += `
-                    <tr class="${isPass ? '' : 'bg-red-50'}">
-                        <td class="p-3 font-medium">${i+1}</td>
-                        <td class="p-3">${agreed}</td>
-                        <td class="p-3 font-bold ${isPass ? 'text-green-600' : 'text-red-600'}">${icvi.toFixed(3)}</td>
-                        <td class="p-3 text-xs text-gray-400">${low.toFixed(2)} - ${high.toFixed(2)}</td>
-                        <td class="p-3">${isPass ? '✅ ผ่าน' : '❌ ปรับปรุง'}</td>
-                    </tr>`;
+                const pass = icvi >= crit;
+                resHtml += `<tr class="${pass ? '' : 'bg-red-50 text-red-700'}">
+                    <td class="p-3 font-medium">${i+1}</td>
+                    <td class="p-3">${agreed}</td>
+                    <td class="p-3 font-bold">${icvi.toFixed(3)}</td>
+                    <td class="p-3 text-xs opacity-70">${low.toFixed(2)} - ${high.toFixed(2)}</td>
+                    <td class="p-3 font-semibold">${pass ? '✅ ผ่าน' : '❌ ปรับปรุง'}</td>
+                </tr>`;
                 
-                excelData.push({ "Item": i+1, "Agreed": agreed, "I-CVI": icvi.toFixed(3), "CI_Low": low.toFixed(2), "CI_High": high.toFixed(2), "Status": isPass ? "Pass" : "Revise" });
+                finalData.push({ "Item": i+1, "Agreed": agreed, "I-CVI": icvi.toFixed(3), "CI_Low": low.toFixed(2), "CI_High": high.toFixed(2), "Status": pass ? "Pass" : "Revise" });
             }
 
             const aveCVI = itemCVIs.reduce((a,b) => a+b) / itemCVIs.length;
-            const uaCVI = uaTotal / itemCVIs.length;
+            const uaCVI = uaCount / itemCVIs.length;
 
-            document.getElementById('stat-cards').innerHTML = `
-                <div class="bg-blue-600 p-4 rounded-xl text-white text-center shadow-lg shadow-blue-100">
-                    <p class="text-[10px] uppercase font-bold opacity-80">S-CVI/Ave</p>
+            document.getElementById('summaryCards').innerHTML = `
+                <div class="bg-white p-5 border-2 border-blue-600 rounded-2xl text-center">
+                    <p class="text-blue-600 text-[10px] font-bold uppercase">S-CVI / Average</p>
                     <p class="text-3xl font-black">${aveCVI.toFixed(3)}</p>
                 </div>
-                <div class="bg-indigo-600 p-4 rounded-xl text-white text-center shadow-lg shadow-indigo-100">
-                    <p class="text-[10px] uppercase font-bold opacity-80">S-CVI/UA</p>
+                <div class="bg-white p-5 border-2 border-indigo-600 rounded-2xl text-center">
+                    <p class="text-indigo-600 text-[10px] font-bold uppercase">S-CVI / Universal</p>
                     <p class="text-3xl font-black">${uaCVI.toFixed(3)}</p>
                 </div>
-                <div class="bg-slate-800 p-4 rounded-xl text-white text-center">
-                    <p class="text-[10px] uppercase font-bold opacity-80">Acceptance Crit.</p>
+                <div class="bg-slate-800 p-5 rounded-2xl text-center text-white">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase">Lynn Criteria</p>
                     <p class="text-3xl font-black">≥ ${crit.toFixed(2)}</p>
                 </div>
             `;
 
-            document.getElementById('res-body').innerHTML = resHtml;
-            document.getElementById('results-area').classList.remove('hidden');
-            window.scrollTo({ top: document.getElementById('results-area').offsetTop, behavior: 'smooth' });
+            document.getElementById('resBody').innerHTML = resHtml;
+            document.getElementById('adviceList').innerHTML = `
+                <li>ผู้เชี่ยวชาญ ${nExp} คน: ค่า I-CVI รายข้อต้องไม่ต่ำกว่า ${crit.toFixed(2)}</li>
+                <li>ค่า S-CVI/Ave ทั้งฉบับควรสูงกว่า 0.90 เพื่อความน่าเชื่อถือระดับสูง</li>
+                <li>สถานะ: ${aveCVI >= 0.9 ? '<b>ผ่านเกณฑ์ดีเยี่ยม</b>' : '<b class="text-red-600">ควรพิจารณาแก้ไขข้อที่ไม่ผ่านเกณฑ์</b>'}</li>
+            `;
+            showStep(3);
         }
 
         function exportToExcel() {
-            const ws = XLSX.utils.json_to_sheet(excelData);
+            const ws = XLSX.utils.json_to_sheet(finalData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "CVI_Summary");
-            XLSX.writeFile(wb, "CVI_Research_Analysis.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "CVI_Report");
+            XLSX.writeFile(wb, "CVI_Analysis_Result.xlsx");
         }
     </script>
 </body>
